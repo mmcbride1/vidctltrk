@@ -1,0 +1,46 @@
+body {
+	background-color:#f1f1f1;
+	font-family: georgia,sans-serif;
+	color:#333;
+	margin:0;
+	padding:0;
+	}
+	 
+	#wrapper {
+	width:560px;
+	background-color:#FFFF00;
+        position: absolute;
+        left: 0px;
+	border-left:1px solid #ccc;
+	border-right:1px solid #ccc;
+	}
+
+        #header {
+        background-color:#FF0000;
+	width:560px;
+	height:75px;
+        margin:0 auto;
+        margin-bottom:25px;
+	border-bottom:1px solid #ccc;
+	border-top:1px solid #ccc;
+	}
+
+        #header h2 {
+        padding:10px;
+        font-family: "Lucida Console", Monaco, monospace;
+	}
+
+        #time {
+        position: absolute;
+        left: 10px;
+        top: 50px;
+        }
+
+        #scroll {
+        background-color:#FFFFFF;
+        height:250px;
+        width:250px;
+        border:1px solid #ccc;
+        font:16px/26px Georgia, Garamond, Serif;
+        overflow:auto;
+        }
