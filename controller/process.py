@@ -2,7 +2,9 @@
 
 import os
 import sys
+import time
 import subprocess
+from xtra import purgetool
 from img import ImageHandler
 from vid import VideoStager
 
@@ -24,16 +26,18 @@ def checksys():
 
    return stat
 
-## execute ##
+# __init()__ #
 
-if checksys() == 0 :
+while True :
 
-   img = ImageHandler()
+   if checksys() == 0 :
 
-   vid = VideoStager()
+      img = ImageHandler()
 
-   vid.run()
+      vid = VideoStager()
 
-else :
+      vid.run()
 
-   sys.exit()
+      purgetool.ridfile()
+
+   time.sleep(60)

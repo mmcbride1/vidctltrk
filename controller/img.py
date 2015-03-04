@@ -151,7 +151,7 @@ class ImageHandler:
 
             self.logger(cf[9] + " " + str(code))
 
-            sys.exit()
+            return
 
    """
    Build the needed 

@@ -153,8 +153,10 @@ class VideoStager:
       self.dir = dir
       
       cmd = "sudo rm %s/*" % (dir)
+
+      if not (os.listdir(dir) == []):
       
-      os.system(cmd)
+         os.system(cmd)
       
       return 
       
