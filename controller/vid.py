@@ -115,8 +115,10 @@ class VideoStager:
       vid = self.getConf(0) 
       
       vname = vid + self.vidname()
+
+      tmp = "-tmp " + self.getConf(2)
       
-      cmd = "%s %s %s" % (mp4, file, vname)
+      cmd = "%s %s %s %s" % (mp4, file, vname, tmp)
       
       x = subprocess.call(cmd, shell=True)
       

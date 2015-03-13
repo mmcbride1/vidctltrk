@@ -2,9 +2,11 @@
 
 import os
 import sys
+import time
 import logging
 import datetime
 import subprocess
+from subprocess import PIPE
 from xml.dom import minidom
 
 #
@@ -18,6 +20,7 @@ class ImageHandler:
    # configuration #
    #################
    cf = [] #########
+   df = {} #########
    #################
 
    """
@@ -30,9 +33,70 @@ class ImageHandler:
 
       self.cf = self.getParams();
 
-      self.scp()
+      self.main()
 
-      self.delete()
+   """
+   Main function
+   Executes the 
+   series of remote
+   processes
+
+   """
+
+   def main(self):
+
+      cf = self.cf
+
+      for host in cf[0:2] :
+
+         if self.proc(host) == 0 :
+
+            self.asgrmcnt(host)
+
+            self.scp(host)
+
+            self.trydel(host)
+
+      return
+
+   """
+   For the delete 
+   function, attempt
+   5 times in case 
+   of disconnect   
+
+   """
+
+   def trydel(self, host):
+
+      self.host = host
+
+      for x in range(0, 5) :
+
+         res = self.delete(host)
+
+         if res != '' :
+
+            time.sleep(5)
+
+         else :
+
+            break
+
+      return
+
+   """
+   Get the list 
+   that contains the
+   remote file names at
+   the execution of this
+   program
+
+   """
+
+   def getrmlst(self):
+
+      return self.df
 
    """
    Retrieve the 
@@ -71,19 +135,22 @@ class ImageHandler:
       return params
 
    """
-   Get the machine IP
+   Get the machine IP,
+   or get the hostname
    for the full host
    address
 
    """
 
-   def getIP(self, host):
+   def getHNIP(self, host, part):
 
       self.host = host
 
+      self.part = part
+
       host = host.split(':')[0]
 
-      return host.split('@')[1]
+      return host.split('@')[part]
 
    """
    Log keeping for
@@ -126,32 +193,77 @@ class ImageHandler:
       return proc
 
    """
-   Check connectivity
-   and attempt to 
-   connect a max of
-   five times
+   Carry out ping 
+   function to ensure 
+   connectivity and 
+   log any issues in
+   the process
 
    """
 
    def proc(self, host):
 
       cf = self.cf
-      
+
       self.host = host
 
-      for i in range(5):
+      ip = self.getHNIP(host, 1)
 
-         code = self.ping(host)
+      code = self.ping(ip)
 
-         if code == 0:
+      if code != 0 :
 
-            break
+         self.logger(cf[9] + " " + str(code))
 
-         if i == 4:
+      return code
 
-            self.logger(cf[9] + " " + str(code))
+   """
+   Quick directory 
+   check to evaluate 
+   contents
+   
+   """
 
-            return
+   def check(self, host, dirc):
+
+      cf = self.cf
+
+      self.host = host
+      self.dirc = dirc
+
+      cmd = "ls -A %s" % (dirc)
+
+      chk = cf[7] % (cf[4], host, cmd)
+
+      con = os.popen(chk).read()
+
+      lst = con.replace('\n', ' ')
+
+      return lst.rstrip()
+
+   """
+   Assign remote 
+   content. First take
+   a snapshot of the 
+   files in the scp
+   directory and assign
+   them to a list
+
+   """
+
+   def asgrmcnt(self, host):
+
+      cf = self.cf
+
+      self.host = host
+
+      p = host.split(':')
+
+      n = p[1].split(os.sep)
+
+      self.df[n[2]] = self.check(p[0], p[1])
+
+      return 
 
    """
    Build the needed 
@@ -177,21 +289,21 @@ class ImageHandler:
 
    """ 
 
-   def scp(self):
+   def scp(self, host):
 
       cf = self.cf
 
-      for host in cf[0:2] :
+      self.host = host
 
-         cmd = self.scpcmd(host)
+      cmd = self.scpcmd(host)
 
-         ip = self.getIP(host)
+      ip = self.getHNIP(host, 1)
 
-         self.proc(ip)
+      proc = subprocess.Popen(cmd, shell=True)
 
-         proc = subprocess.Popen(cmd, shell=True)
+      proc.wait()
 
-         proc.wait()
+      return
 
    """
    General SSH access
@@ -207,29 +319,66 @@ class ImageHandler:
 
       cmd_str = cf[7] % (cf[4], host, cmd)
 
-      subprocess.Popen(cmd_str, shell=True)
-      
+      p = subprocess.Popen(cmd_str, shell=True, stderr=PIPE)
+
+      return p.communicate()[1]
+
    """
-   Quick directory 
-   check to evaluate 
-   contents
-   
+   Prior to purging
+   the remote image
+   files, attempt
+   to confirm that
+   the copy was 
+   successful
+
    """
-   
-   def check(self, host, dirc):
-   
+
+   def flocal(self, lst):
+
+      self.lst = lst
+
       cf = self.cf
+
+      pth = cf[5] + '/images/'
+
+      lst = lst.split(' ')
+
+      for f in lst :
+
+         if os.path.isfile(pth + f) == False :
+
+            return False
+
+      return True
       
-      self.host = host
-      self.dirc = dirc
-      
-      cmd = "ls -A %s" % (dirc)
-      
-      chk = cf[7] % (cf[4], host, cmd)
-      
-      con = os.popen(chk).read()
-      
-      return 0 if (con == "") else 1
+   """
+   Build the command
+   that will purge
+   the image files 
+   from the remote 
+   system 
+
+   """
+
+   def delcmd(self, inpt):
+
+      self.inpt = inpt
+
+      name = inpt[0].split('@')[0]
+
+      flst = self.getrmlst()
+
+      ext = self.flocal(flst[name])
+
+      if (flst[name] != '') & (ext) :
+
+         cmd = "cd %s; sudo rm %s"
+
+         return cmd % (inpt[1], flst[name])
+
+      else :
+
+         return 0
 
    """
    Following the file
@@ -239,21 +388,19 @@ class ImageHandler:
 
    """
 
-   def delete(self):
+   def delete(self, dirc):
 
       cf = self.cf
 
-      for dirc in cf[0:2] :
+      self.dirc = dirc
 
-         path = dirc.split(':')
+      path = dirc.split(':')
 
-         cmd = "sudo rm %s/*" % (path[1])
-
-         ip = self.getIP(dirc)
-
-         self.proc(ip)
+      cmd = self.delcmd(path)
          
-         if self.check(path[0], path[1]) == 1 :
+      if cmd != 0 :
 
-            self.ssh(path[0], cmd)
+         p = self.ssh(path[0], '"%s"' % cmd)
+
+         return p
 

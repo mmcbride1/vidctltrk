@@ -40,4 +40,4 @@ while True :
 
       purgetool.ridfile()
 
-   time.sleep(60)
+   time.sleep(300)
