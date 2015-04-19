@@ -87,13 +87,21 @@ class Player {
 
     public function listVids($vids) {
 
+       $loc = $this->conf[0];
+
        $cfg = $this->conf[1];
+
+       $lnk = $this->conf[2];
 
        foreach($vids as $vid) {
 
+          $locl = "$loc/$vid";
+
           $full = "/shared/$vid";
 
-          echo "$cfg".$full.'">'.$vid.'</a></h5>';
+          echo "$cfg".$full.'"style=float:left;">'.$vid.'</a></h5>';
+
+          echo "<a href=delete.php?file=$locl>$lnk</a><br/>";
 
       }
    
